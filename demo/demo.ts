@@ -1,4 +1,3 @@
-import Deno from Deno
 import {EditorState, EditorView, basicSetup} from "../basic-setup/src/basic-setup.ts"
 import {markdown} from "../lang-markdown/src/index.ts"
 
