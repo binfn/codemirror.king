@@ -1,0 +1,11 @@
+// This grammar is LR(1) but not LALR(1)
+
+@top T { "a" E "a" | "b" E "b" | "a" F "b" | "b" F "a" }
+E { "e" }
+F { "e" }
+
+# Can parse
+
+aeb
+
+==> T(F)

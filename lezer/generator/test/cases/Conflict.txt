@@ -1,0 +1,30 @@
+@top T { expr+ }
+
+expr { ArrowExpr | ParenExpr | Identifier }
+
+ParenExpr { "(" expr ")" }
+
+ArrowExpr { "(" ParamName ")" "=>" expr }
+
+Identifier { word ~arrow }
+
+ParamName { word ~arrow }
+
+@skip { whitespace }
+
+@tokens {
+  whitespace { std.whitespace+ }
+  word { std.asciiLetter+ }
+}
+
+# Arrow
+
+(a) => b
+
+==> T(ArrowExpr(ParamName, Identifier))
+
+# Paren expr
+
+(a)
+
+==> T(ParenExpr(Identifier))

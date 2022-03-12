@@ -1,0 +1,9 @@
+@top T { (x | y)+ }
+
+@tokens {
+  x { "x"+ }
+
+  y { "x" "y"* }
+}
+
+//! Overlapping tokens

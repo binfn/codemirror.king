@@ -1,0 +1,7 @@
+@top T { @specialize<name, "foo"> | @extend<name, "foo"> }
+
+@tokens {
+  name { std.asciiLetter+ }
+}
+
+//! Conflicting specialization

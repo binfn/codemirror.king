@@ -1,0 +1,13 @@
+@top T { A* }
+
+A { B ~ambig "." | C ~ambig "." }
+
+B { C }
+
+C { "x" }
+
+# Resolve
+
+x.
+
+==> T(A(C))

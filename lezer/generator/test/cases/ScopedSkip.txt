@@ -1,0 +1,24 @@
+@top T { A+ }
+
+@skip { spaces }
+
+@skip { dashes } {
+  A { "x" | "(" "b" ")" }
+}
+
+@tokens {
+  spaces { " "+ }
+  dashes { "-"+ }
+}
+
+# Applies the correct skip rules
+
+x (---b---) (b)
+
+==> T(A, A, A)
+
+# Marks invalid whitespace
+
+( b )
+
+==> T(A(⚠, ⚠))

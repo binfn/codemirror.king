@@ -1,0 +1,19 @@
+@top T { (Id | Thing)+ }
+
+@skip { whitespace }
+
+@tokens {
+  whitespace { " "+ }
+
+  identifierChar { std.asciiLetter | $[\u{a1}-\u{10ffff}] }
+
+  Id { identifierChar+ }
+
+  Thing { "-" ("💩" | "🦆") }
+}
+
+# Tokens with astral characters
+
+foo föö 象𫝄鼻 -💩 -🦆 -& -🍰
+
+==> T(Id,Id,Id,Thing,Thing,⚠,⚠,Id)

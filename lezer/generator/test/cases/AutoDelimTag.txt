@@ -1,0 +1,62 @@
+@top T { expr+ }
+
+expr {
+  ParenExpr { "(" Number ")" } |
+  DoubleExpr { "[[" Number "]]" } |
+  BracketExpr |
+  WeirdExpr |
+  DualExpr
+}
+
+BracketExpr {
+  BracketLeft Number BracketRight
+}
+
+WeirdExpr {
+  "((" Number "()"
+}
+
+DualExpr {
+  ("{" | "{{") Number ("}" | "}}")
+}
+
+@tokens {
+  Number { std.digit+ }
+  BracketLeft { "[|" }
+  BracketRight { "|]" }
+  "[["[@name=DoubleLeft]
+  "]]"[@name=DoubleRight]
+  "(" ")" "{{" "}}" "{" "}" "((" "()"
+}
+
+@detectDelim
+
+# Assigns delimiter node props
+
+(11)
+
+==> T(ParenExpr("("[closedBy=")"], Number, ")"[openedBy="("]))
+
+# Sees through rules
+
+[|50|]
+
+==> T(BracketExpr(BracketLeft[closedBy="BracketRight"], Number, BracketRight[openedBy="BracketLeft"]))
+
+# Doesn't assign delim when tokens self-close
+
+((5()
+
+==> T(WeirdExpr("((", Number, "()"))
+
+# Doesn't assign delim when tokens are part of a choice
+
+{{8}}
+
+==> T(DualExpr("{{", Number, "}}"))
+
+# Recognizes named literals
+
+[[5]]
+
+==> T(DoubleExpr(DoubleLeft[closedBy="DoubleRight"], Number, DoubleRight[openedBy="DoubleLeft"]))

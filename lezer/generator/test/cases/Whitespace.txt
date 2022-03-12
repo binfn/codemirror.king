@@ -1,0 +1,25 @@
+@top T { X+ }
+
+@skip { whitespace | Comment }
+
+@tokens {
+  whitespace { (" " | "\n")+ }
+
+  Comment { "#" ![\n]* }
+
+  X { "x" }
+}
+
+# Skips whitespace
+
+x x
+
+==> T(X, X)
+
+# Skips comments
+
+x
+x # I'm a comment!
+x
+
+==> T(X, X, Comment, X)

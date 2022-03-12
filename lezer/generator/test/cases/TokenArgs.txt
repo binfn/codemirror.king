@@ -1,0 +1,23 @@
+@top T { (kw<"let"> | kw<"if"> | Foo)+ }
+
+@skip { whitespace }
+
+@tokens {
+  whitespace { std.whitespace+ }
+  kw[@name={word}]<word> { word }
+  Foo { bar<"foo"> }
+  bar<x> { baz<x> }
+  baz<z> { "!" z }
+}
+
+# Allows parameterized tokens
+
+let if let
+
+==> T(let, if, let)
+
+# Tokens can call other tokens
+
+!foo
+
+==> T(Foo)

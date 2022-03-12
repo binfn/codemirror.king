@@ -1,0 +1,7 @@
+@top T { X }
+
+@tokens {
+  X { "x"* }
+}
+
+//! zero-length

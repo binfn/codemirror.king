@@ -1,0 +1,7 @@
+@top T { X }
+
+@tokens {
+  X { y }
+}
+
+//! Reference to rule 'y'

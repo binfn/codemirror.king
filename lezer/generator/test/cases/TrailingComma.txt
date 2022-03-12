@@ -1,0 +1,15 @@
+@top T { ("," Expr)* ","? }
+
+@tokens { Expr { "E" } }
+
+# With trailing comma
+
+,E,E,
+
+==> T(Expr,Expr)
+
+# Without trailing comma
+
+,E,E,E
+
+==> T(Expr,Expr,Expr)

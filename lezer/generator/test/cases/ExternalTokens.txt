@@ -1,0 +1,18 @@
+@top T { expr* }
+
+expr {
+  Braced { braceOpen expr braceClose } |
+  X { "x" (Dot Y { "y" })? }
+}
+
+@external tokens ext1 from "./external_tokens.js" {
+  braceOpen,
+  braceClose,
+  Dot
+}
+
+# Uses external tokens
+
+x{x}x.y
+
+==> T(X, Braced(X), X(Dot, Y))

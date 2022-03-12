@@ -1,0 +1,11 @@
+@top T { (象𫝄鼻 | Föó)+ }
+
+象𫝄鼻 { "x" }
+
+@tokens { Föó { "y" } }
+
+# Rules with astral characters
+
+xyx
+
+==> T(象𫝄鼻, Föó, 象𫝄鼻)

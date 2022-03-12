@@ -1,0 +1,8 @@
+@top T { Foo }
+
+@tokens {
+  Foo { bar+ }
+  bar { Foo }
+}
+
+//! recursion in token rules

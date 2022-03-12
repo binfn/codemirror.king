@@ -1,0 +1,28 @@
+@top T { (Word | Number | Operator)+ }
+
+@skip { whitespace }
+
+@tokens {
+  whitespace { std.whitespace+ }
+
+  Word { std.asciiLetter (letter | std.digit)* }
+
+  Number { (std.digit+ ("." std.digit*)? | "." std.digit+) (("e" | "E") ("+" | "-")? std.digit+)? }
+
+  Operator { "+" "+"? | "-" }
+
+  letter { $[a-zA-Z] }
+}
+
+# Word tokens
+
+Hello		Catch22 Foo
+azAZ09
+
+==> T(Word,Word,Word,Word)
+
+# Numbers and operators
+
+50 + 200e-5 ++ .2 - 111.111e+111
+
+==> T(Number,Operator,Number,Operator,Number,Operator,Number)

@@ -1,0 +1,11 @@
+@top T { foo<bar> }
+
+bar { bar "x" | "" }
+
+foo<e> { token<e> }
+
+@tokens {
+  token<x> { x "!" }
+}
+
+//! isn't found in this token group

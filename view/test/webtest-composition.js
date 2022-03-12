@@ -1,0 +1,279 @@
+import { tempView, requireFocus } from "@codemirror/buildhelper/lib/tempview";
+import { EditorView, ViewPlugin, Decoration, WidgetType } from "@codemirror/view";
+import { EditorSelection } from "@codemirror/state";
+import ist from "ist";
+function event(cm, type) {
+    cm.contentDOM.dispatchEvent(new CompositionEvent(type));
+}
+function up(node, text = "", from = node.nodeValue.length, to = from) {
+    let val = node.nodeValue;
+    node.nodeValue = val.slice(0, from) + text + val.slice(to);
+    document.getSelection().collapse(node, from + text.length);
+    return node;
+}
+function hasCompositionDeco(cm) {
+    return cm.docView.compositionDeco.size > 0;
+}
+function compose(cm, start, update, options = {}) {
+    event(cm, "compositionstart");
+    let node, sel = document.getSelection();
+    for (let i = -1; i < update.length; i++) {
+        if (i < 0)
+            node = start();
+        else
+            update[i](node);
+        let { focusNode, focusOffset } = sel;
+        cm.observer.flush();
+        if (options.cancel && i == update.length - 1) {
+            ist(!hasCompositionDeco(cm));
+        }
+        else {
+            ist(node.parentNode && cm.contentDOM.contains(node.parentNode));
+            ist(sel.focusNode, focusNode);
+            ist(sel.focusOffset, focusOffset);
+            ist(hasCompositionDeco(cm));
+        }
+    }
+    event(cm, "compositionend");
+    if (options.end)
+        options.end(node);
+    cm.observer.flush();
+    cm.update([]);
+    ist(!cm.composing);
+    ist(!hasCompositionDeco(cm));
+}
+function wordDeco(state) {
+    let re = /\w+/g, m, deco = [], text = state.doc.toString();
+    while (m = re.exec(text))
+        deco.push(Decoration.mark({ class: "word" }).range(m.index, m.index + m[0].length));
+    return Decoration.set(deco);
+}
+const wordHighlighter = EditorView.decorations.compute(["doc"], wordDeco);
+function widgets(positions, sides) {
+    let xWidget = new class extends WidgetType {
+        toDOM() { let s = document.createElement("var"); s.textContent = "×"; return s; }
+    };
+    let startDeco = Decoration.set(positions.map((p, i) => Decoration.widget({ widget: xWidget, side: sides[i] }).range(p)));
+    return ViewPlugin.define(() => ({
+        decorations: startDeco,
+        update(update) { this.decorations = this.decorations.map(update.changes); }
+    }), { decorations: v => v.decorations });
+}
+describe("Composition", () => {
+    it("supports composition on an empty line", () => {
+        let cm = requireFocus(tempView("foo\n\nbar"));
+        compose(cm, () => up(cm.domAtPos(4).node.appendChild(document.createTextNode("a"))), [
+            n => up(n, "b"),
+            n => up(n, "c")
+        ]);
+        ist(cm.state.doc.toString(), "foo\nabc\nbar");
+    });
+    it("supports composition at end of line in existing node", () => {
+        let cm = requireFocus(tempView("foo"));
+        compose(cm, () => up(cm.domAtPos(2).node), [
+            n => up(n, "!"),
+            n => up(n, "?")
+        ]);
+        ist(cm.state.doc.toString(), "foo!?");
+    });
+    it("supports composition at end of line in a new node", () => {
+        let cm = requireFocus(tempView("foo"));
+        compose(cm, () => up(cm.domAtPos(0).node.appendChild(document.createTextNode("!"))), [
+            n => up(n, "?")
+        ]);
+        ist(cm.state.doc.toString(), "foo!?");
+    });
+    it("supports composition at start of line in a new node", () => {
+        let cm = requireFocus(tempView("foo"));
+        compose(cm, () => {
+            let l0 = cm.domAtPos(0).node;
+            return up(l0.insertBefore(document.createTextNode("!"), l0.firstChild));
+        }, [
+            n => up(n, "?")
+        ]);
+        ist(cm.state.doc.toString(), "!?foo");
+    });
+    it("supports composition inside existing text", () => {
+        let cm = requireFocus(tempView("foo"));
+        compose(cm, () => up(cm.domAtPos(2).node), [
+            n => up(n, "x", 1),
+            n => up(n, "y", 2),
+            n => up(n, "z", 3)
+        ]);
+        ist(cm.state.doc.toString(), "fxyzoo");
+    });
+    it("can deal with Android-style newline-after-composition", () => {
+        let cm = requireFocus(tempView("abcdef"));
+        compose(cm, () => up(cm.domAtPos(2).node), [
+            n => up(n, "x", 3),
+            n => up(n, "y", 4)
+        ], { end: n => {
+                let line = n.parentNode.appendChild(document.createElement("div"));
+                line.textContent = "def";
+                n.nodeValue = "abcxy";
+                document.getSelection().collapse(line, 0);
+            } });
+        ist(cm.state.doc.toString(), "abcxy\ndef");
+    });
+    it("handles replacement of existing words", () => {
+        let cm = requireFocus(tempView("one two three"));
+        compose(cm, () => up(cm.domAtPos(1).node, "five", 4, 7), [
+            n => up(n, "seven", 4, 8),
+            n => up(n, "zero", 4, 9)
+        ]);
+        ist(cm.state.doc.toString(), "one zero three");
+    });
+    it("doesn't get interrupted by changes in decorations", () => {
+        let cm = requireFocus(tempView("foo ...", [wordHighlighter]));
+        compose(cm, () => up(cm.domAtPos(5).node), [
+            n => up(n, "hi", 1, 4)
+        ]);
+        ist(cm.state.doc.toString(), "foo hi");
+    });
+    it("works inside highlighted text", () => {
+        let cm = requireFocus(tempView("one two", [wordHighlighter]));
+        compose(cm, () => up(cm.domAtPos(1).node, "x"), [
+            n => up(n, "y"),
+            n => up(n, ".")
+        ]);
+        ist(cm.state.doc.toString(), "onexy. two");
+    });
+    it("can handle compositions spanning multiple tokens", () => {
+        let cm = requireFocus(tempView("one two", [wordHighlighter]));
+        compose(cm, () => up(cm.domAtPos(5).node, "a"), [
+            n => up(n, "b"),
+            n => up(n, "c")
+        ], { end: n => {
+                ;
+                n.parentNode.previousSibling.remove();
+                n.parentNode.previousSibling.remove();
+                return up(n, "xyzone ", 0);
+            } });
+        ist(cm.state.doc.toString(), "xyzone twoabc");
+    });
+    it("doesn't overwrite widgets next to the composition", () => {
+        let cm = requireFocus(tempView("", [widgets([0, 0], [-1, 1])]));
+        compose(cm, () => {
+            let l0 = cm.domAtPos(0).node;
+            return up(l0.insertBefore(document.createTextNode("a"), l0.lastChild));
+        }, [n => up(n, "b", 0, 1)], { end: () => {
+                ist(cm.contentDOM.querySelectorAll("var").length, 2);
+            } });
+        ist(cm.state.doc.toString(), "b");
+    });
+    it("cancels composition when a change fully overlaps with it", () => {
+        let cm = requireFocus(tempView("one\ntwo\nthree"));
+        compose(cm, () => up(cm.domAtPos(5).node, "x"), [
+            () => cm.dispatch({ changes: { from: 2, to: 10, insert: "---" } })
+        ], { cancel: true });
+        ist(cm.state.doc.toString(), "on---hree");
+    });
+    it("cancels composition when a change partially overlaps with it", () => {
+        let cm = requireFocus(tempView("one\ntwo\nthree"));
+        compose(cm, () => up(cm.domAtPos(5).node, "x", 0), [
+            () => cm.dispatch({ changes: { from: 5, to: 12, insert: "---" } })
+        ], { cancel: true });
+        ist(cm.state.doc.toString(), "one\nx---ee");
+    });
+    it("cancels composition when a change happens inside of it", () => {
+        let cm = requireFocus(tempView("one\ntwo\nthree"));
+        compose(cm, () => up(cm.domAtPos(5).node, "x", 0), [
+            () => cm.dispatch({ changes: { from: 5, to: 6, insert: "!" } })
+        ], { cancel: true });
+        ist(cm.state.doc.toString(), "one\nx!wo\nthree");
+    });
+    it("doesn't cancel composition when a change happens elsewhere", () => {
+        let cm = requireFocus(tempView("one\ntwo\nthree"));
+        compose(cm, () => up(cm.domAtPos(5).node, "x", 0), [
+            n => up(n, "y", 1),
+            () => cm.dispatch({ changes: { from: 1, to: 2, insert: "!" } }),
+            n => up(n, "z", 2)
+        ]);
+        ist(cm.state.doc.toString(), "o!e\nxyztwo\nthree");
+    });
+    it("doesn't cancel composition when the composition is moved into a new line", () => {
+        let cm = requireFocus(tempView("one\ntwo three", [wordHighlighter]));
+        compose(cm, () => up(cm.domAtPos(9).node, "x"), [
+            n => up(n, "y"),
+            () => cm.dispatch({ changes: { from: 4, insert: "\n" } }),
+            n => up(n, "z")
+        ]);
+        ist(cm.state.doc.toString(), "one\n\ntwo threexyz");
+    });
+    it("doesn't cancel composition when a line break is inserted in front of it", () => {
+        let cm = requireFocus(tempView("one two three", [wordHighlighter]));
+        compose(cm, () => up(cm.domAtPos(9).node, "x"), [
+            n => up(n, "y"),
+            () => cm.dispatch({ changes: { from: 8, insert: "\n" } }),
+            n => up(n, "z")
+        ]);
+        ist(cm.state.doc.toString(), "one two \nthreexyz");
+    });
+    it("can handle browsers inserting new wrapper nodes around the composition", () => {
+        let cm = requireFocus(tempView("one two", [wordHighlighter]));
+        compose(cm, () => {
+            let span = cm.domAtPos(1).node.parentNode;
+            let wrap = span.appendChild(document.createElement("font"));
+            let text = wrap.appendChild(document.createTextNode(""));
+            return up(text, "1");
+        }, [n => up(n, "2")]);
+        ist(cm.state.doc.toString(), "one12 two");
+    });
+    it("doesn't cancel composition when a newline is added immediately in front", () => {
+        let cm = requireFocus(tempView("one\ntwo three", [wordHighlighter]));
+        compose(cm, () => up(cm.domAtPos(9).node, "x"), [
+            n => up(n, "y"),
+            () => cm.dispatch({ changes: { from: 7, to: 8, insert: "\n" } }),
+            n => up(n, "z")
+        ]);
+        ist(cm.state.doc.toString(), "one\ntwo\nthreexyz");
+    });
+    it("handles compositions rapidly following each other", () => {
+        let cm = requireFocus(tempView("one\ntwo"));
+        event(cm, "compositionstart");
+        let one = cm.domAtPos(1).node;
+        up(one, "!");
+        cm.observer.flush();
+        event(cm, "compositionend");
+        one.nodeValue = "one!!";
+        let L2 = cm.contentDOM.lastChild;
+        event(cm, "compositionstart");
+        let two = cm.domAtPos(7).node;
+        ist(cm.contentDOM.lastChild, L2);
+        up(two, ".");
+        cm.observer.flush();
+        ist(hasCompositionDeco(cm));
+        ist(getSelection().focusNode, two);
+        ist(getSelection().focusOffset, 4);
+        ist(cm.composing);
+        event(cm, "compositionend");
+        cm.observer.flush();
+        ist(cm.state.doc.toString(), "one!!\ntwo.");
+    });
+    it("applies compositions at secondary cursors", () => {
+        let cm = requireFocus(tempView("one\ntwo"));
+        cm.dispatch({ selection: EditorSelection.create([EditorSelection.cursor(3), EditorSelection.cursor(7)], 0) });
+        compose(cm, () => up(cm.domAtPos(2).node, "·"), [
+            n => up(n, "-", 3, 4),
+            n => up(n, "→", 3, 4)
+        ]);
+        ist(cm.state.doc.toString(), "one→\ntwo→");
+    });
+    it("applies compositions at secondary cursors even when the change is before the cursor", () => {
+        let cm = requireFocus(tempView("one\ntwo"));
+        cm.dispatch({ selection: EditorSelection.create([EditorSelection.cursor(3), EditorSelection.cursor(7)], 0) });
+        compose(cm, () => up(cm.domAtPos(2).node, "X"), [
+            n => up(n, "Y"),
+            n => up(n, "Z", 3, 4)
+        ]);
+        ist(cm.state.doc.toString(), "oneZY\ntwoZY");
+    });
+    it("doesn't try to apply multi-cursor composition in a single node", () => {
+        let cm = requireFocus(tempView("onetwo"));
+        cm.dispatch({ selection: EditorSelection.create([EditorSelection.cursor(3), EditorSelection.cursor(6)], 0) });
+        compose(cm, () => up(cm.domAtPos(2).node, "X", 3), [
+            n => up(n, "Y", 4),
+        ]);
+        ist(cm.state.doc.toString(), "oneXYtwo");
+    });
+});

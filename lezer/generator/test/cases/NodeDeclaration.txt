@@ -1,0 +1,21 @@
+@top Doc { ("a" | "(" B ")")+ }
+
+B { "b" }
+
+@tokens {
+  "a"[@name=A]
+  "("[@name=ParenOpen]
+  ")"[@name=ParenClose]
+}
+
+# Adds a document node
+
+a
+
+==> Doc(A)
+
+# Applies punctuation info
+
+(b)
+
+==> Doc(ParenOpen, B, ParenClose)

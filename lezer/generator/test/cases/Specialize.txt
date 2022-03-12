@@ -1,0 +1,42 @@
+@top T { (statement ";")+ }
+
+statement {
+  Decl { kw<"let"> Id "=" Number } |
+  Print { kw<"print"> Number } |
+  Exit { kw<"exit"> } |
+  Async { kwExt<"async"> Number } |
+  Id
+}
+
+kw<word> { @specialize<Id, word> }
+
+kwExt<word> { @extend<Id, word> }
+
+@skip { whitespace }
+
+@tokens {
+  whitespace { std.whitespace+ }
+  Id { std.asciiLetter+ }
+  Number { std.digit+ }
+}
+
+# Can use a contextual keyword as regular identifier
+
+let async = 10;
+exit;
+
+==> T(Decl(Id, Number), Exit)
+
+# Can not use a non-contextual keyword as identifier
+
+print 10;
+let print 2;
+
+==> T(Print(Number),Decl(⚠),⚠,Print(Number))
+
+# Use of extended token can be determined by next token
+
+async 1;
+async;
+
+==> T(Async(Number), Id)

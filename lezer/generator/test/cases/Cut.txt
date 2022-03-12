@@ -1,0 +1,18 @@
+@precedence {
+  statement @cut
+}
+
+@top T { statement* }
+
+statement {
+  Block { !statement "{" statement* "}" } |
+  expression ";"
+}
+
+expression { "x" | "(" expression ")" | "{" "}" }
+
+# Statement is block
+
+{}
+
+==> T(Block)

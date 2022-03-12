@@ -1,0 +1,23 @@
+@precedence { div @left }
+
+@top T { expr }
+
+expr { RegExp | Symbol | BinOp }
+
+BinOp { expr !div "/" expr }
+
+@skip { whitespace }
+
+@tokens {
+  whitespace { std.whitespace+ }
+
+  Symbol { std.asciiLetter+ }
+
+  RegExp { "/" ![/]+ "/" }
+}
+
+# Disambiguates division from regexp
+
+x / y / /foo/
+
+==> T(BinOp(BinOp(Symbol,Symbol),RegExp))

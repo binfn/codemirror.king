@@ -1,0 +1,9 @@
+@top T { xA | xB }
+
+@tokens {
+  xA { "x" }
+  xB { "xx" }
+  @conflict { xA, xB }
+}
+
+//! Overlapping tokens

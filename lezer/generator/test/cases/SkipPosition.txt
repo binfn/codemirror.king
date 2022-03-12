@@ -1,0 +1,22 @@
+@top T { Statement+ }
+
+Statement {
+  Variable ";" |
+  Variable Variable ";"
+}
+
+Variable { identifier }
+
+@skip { space | Comment }
+
+@tokens {
+  space { std.whitespace+ }
+  Comment { "'" ![']* "'" }
+  identifier { "x" }
+}
+
+# Puts skipped content in the right tree position
+
+x'c';'c' x 'c' x 'c'; 'c'
+
+==> T(Statement(Variable, Comment), Comment, Statement(Variable, Comment, Variable, Comment), Comment)

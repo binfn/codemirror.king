@@ -1,0 +1,15 @@
+@top T { (A | B | BB)+ }
+
+@tokens {
+  @precedence { BB, B }
+
+  A { "A" }
+  B { "B" "."? }
+  BB { "BB" }
+}
+
+# Token precedence
+
+ABBAB
+
+==> T(A, BB, A, B)

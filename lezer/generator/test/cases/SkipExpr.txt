@@ -1,0 +1,17 @@
+@top T { Foo { "foo" }+ }
+
+@skip { " " | "<" skipContent* ">" }
+
+skipContent { A { "a" } | B { "b" } }
+
+# Can skip the simple part of the skip expression
+
+foo foo
+
+==> T(Foo,Foo)
+
+# Outputs tags from skipped content
+
+foo <aba> foo
+
+==> T(Foo,A,B,A,Foo)

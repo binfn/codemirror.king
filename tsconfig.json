@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "dom.asynciterable",
+      "deno.ns",
+      "deno.unstable",
+      "scripthost"
+    ],/*
+    "types": [
+      "./style-mod/style-mod.d.ts",
+    ],*/
+    "noUnusedLocals": false,
+  },
+  "include": ["*/src/*.ts", "*/test/*.ts", "/demo/demo.ts"],
+}

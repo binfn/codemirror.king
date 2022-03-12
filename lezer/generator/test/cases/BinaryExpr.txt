@@ -1,0 +1,62 @@
+@precedence { mult @left, plus @left }
+
+@top T { expr }
+
+expr {
+  atom | BinaryExpr
+}
+
+BinaryExpr {
+  expr !mult MultOp expr |
+  expr !plus AddOp expr
+}
+
+atom { Symbol | "(" expr ")" }
+
+@tokens {
+  MultOp { "*" | "/" }
+  AddOp { "+" | "-" }
+  Symbol { "x" | "y" }
+}
+
+# Parenthesized
+
+(x+y)/x
+
+==> T(BinaryExpr(BinaryExpr(Symbol,AddOp,Symbol),MultOp,Symbol))
+
+# Associativity
+
+x+x+x+x
+
+==> T(BinaryExpr(BinaryExpr(BinaryExpr(Symbol,AddOp,Symbol),AddOp,Symbol),AddOp,Symbol))
+
+# Precedence
+
+x+x*x-x
+
+==> T(BinaryExpr(BinaryExpr(Symbol,AddOp,BinaryExpr(Symbol,MultOp,Symbol)),AddOp,Symbol))
+
+# Mixed precedence
+
+x*x+y/y
+
+==> T(BinaryExpr(BinaryExpr(Symbol,MultOp,Symbol),AddOp,BinaryExpr(Symbol,MultOp,Symbol)))
+
+# Duplicate operator
+
+x++y
+
+==> T(BinaryExpr(BinaryExpr(Symbol,AddOp,⚠),AddOp,Symbol))
+
+# Dropped character 
+
+x%+y
+
+==> T(BinaryExpr(Symbol,⚠,AddOp,Symbol))
+
+# Missing operator
+
+xy
+
+==> T(Symbol,⚠(Symbol))

@@ -1,0 +1,11 @@
+@top T { X+ }
+
+y {}
+
+X { "x" "" () y }
+
+# Ignores empty expressions
+
+xxx
+
+==> T(X, X, X)

@@ -1,0 +1,23 @@
+@top T { (Class | Block)* }
+
+Class { "class" "{" "classitem"* "}" }
+
+Block { "{" (Block | "statement")* "}" }
+
+@skip { whitespace }
+
+@tokens {
+  whitespace { std.whitespace+ }
+}
+
+# Can resynchronize to an outer context
+
+{ { { class { classitem classitem }
+
+==> T(Block(Block(Block(⚠),⚠),⚠),Class)
+
+# Properly places end-of-file errors
+
+{ { {	
+
+==> T(Block(Block(Block(⚠),⚠),⚠))

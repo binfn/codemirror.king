@@ -1,0 +1,14 @@
+@top T { (A | b | @specialize[@name=I]<i, "ii">)+ }
+
+A { "a" }
+
+@tokens {
+  b[@name=B] { "b" }
+  i { "i"+ }
+}
+
+# Uses names assigned to rules
+
+abaii
+
+==> T(A, B, A, I)
