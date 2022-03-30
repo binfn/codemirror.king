@@ -4,7 +4,7 @@ import {Stack, StackBufferCursor} from "./stack.ts"
 import {Action, Specialize, Term, Seq, StateFlag, ParseState, File} from "./constants.ts"
 import {Tokenizer, TokenGroup, ExternalTokenizer, CachedToken, InputStream} from "./token.ts"
 import {decodeArray} from "./decode.ts"
-import { process } from "https://cdn.deno.land/std/versions/0.132.0/raw/node/process.ts";
+//import { process } from "https://cdn.deno.land/std/versions/0.132.0/raw/node/process.ts";
 
 //https://deno.land/std@0.132.0/node/process.ts
 //https://cdn.deno.land/std/versions/0.132.0/raw/node/process.ts
@@ -13,7 +13,7 @@ import { process } from "https://cdn.deno.land/std/versions/0.132.0/raw/node/pro
 // doesn't match the grammar at all.
 
 // Environment variable used to control console output
-const verbose = typeof process != "undefined" && /\bparse\b/.test(process.env.LOG!)
+const verbose = typeof undefined != "undefined" && /\bparse\b/.test(process.env.LOG!)
 
 let stackIDs: WeakMap<Stack, string> | null = null
 
