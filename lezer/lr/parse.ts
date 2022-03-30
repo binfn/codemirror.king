@@ -4,7 +4,10 @@ import {Stack, StackBufferCursor} from "./stack.ts"
 import {Action, Specialize, Term, Seq, StateFlag, ParseState, File} from "./constants.ts"
 import {Tokenizer, TokenGroup, ExternalTokenizer, CachedToken, InputStream} from "./token.ts"
 import {decodeArray} from "./decode.ts"
-import { process } from "https://deno.land/std/node/process.ts";
+import { process } from "https://deno.land/std@0.132.0/node/process.ts";
+
+//https://deno.land/std@0.132.0/node/process.ts
+//https://cdn.deno.land/std/versions/0.132.0/raw/node/process.ts
 
 // FIXME find some way to reduce recovery work done when the input
 // doesn't match the grammar at all.
