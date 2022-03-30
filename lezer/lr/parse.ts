@@ -13,7 +13,7 @@ import {decodeArray} from "./decode.ts"
 // doesn't match the grammar at all.
 
 // Environment variable used to control console output
-const verbose = typeof undefined != "undefined" && /\bparse\b/.test(process.env.LOG!)
+const verbose = false
 
 let stackIDs: WeakMap<Stack, string> | null = null
 
